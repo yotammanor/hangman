@@ -24,6 +24,8 @@ def initialize_board():
     try:
         board = BoardGame(TerminalPainterBoardGameView)
     except curses.error:
+        print('Failed to load Advanced display, using fallback '
+              'simplified display')
         # I started with the simple console view, and then added the prettier
         # one above. The following will load as a backup if it the former fails
         # on initialization. Feel free to make it fail to see the older
@@ -54,8 +56,8 @@ class BoardGame(object):
     REQUEST_USER_INPUT_MSG = 'Please Guess a character: '
     EMPTY_INPUT_MSG = 'You must insert a character to continue!'
     MULTI_CHAR_INPUT_MSG = 'Please insert one character only!'
-    ALREADY_GUESSED_MSG = '{round_guess} was already guessed!'
-    INVALID_INPUT_MSG = '{round_guess} is an invalid option!'
+    ALREADY_GUESSED_MSG = '{character} was already guessed!'
+    INVALID_INPUT_MSG = '{character} is an invalid option!'
 
     def __init__(self, view_class):
         self.view = view_class(self)
@@ -95,7 +97,7 @@ class BoardGame(object):
         is_valid_guess = False
         while not is_valid_guess:
             round_guess = self.get_user_input()
-            is_valid_guess = self.validate_input(round_guess, is_valid_guess)
+            is_valid_guess = self.validate_input(round_guess)
         return round_guess
 
     def get_user_input(self):
@@ -114,7 +116,8 @@ class BoardGame(object):
     def display_message(self, msg):
         return self.view.display_message(msg)
 
-    def validate_input(self, round_guess, valid_guess):
+    def validate_input(self, round_guess):
+        valid_guess = False
         if self._valid_guess(round_guess):
             valid_guess = True
         elif self._empty_input(round_guess):
@@ -123,10 +126,10 @@ class BoardGame(object):
             self.display_message(self.MULTI_CHAR_INPUT_MSG)
         elif self._character_already_guessed(round_guess):
             self.display_message(self.ALREADY_GUESSED_MSG.format(
-                round_guess=round_guess))
+                character=round_guess))
         else:
             self.display_message(self.INVALID_INPUT_MSG.format(
-                round_guess=round_guess))
+                character=round_guess))
         return valid_guess
 
     @staticmethod
