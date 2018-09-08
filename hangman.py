@@ -213,6 +213,7 @@ class Word(object):
         self._plain_word = word.upper()
         self._characters_in_word = set(self._plain_word)
         self._character_pool = character_pool
+        self._revealed = False
 
     def __repr__(self):
         return self.view.__repr__()
@@ -223,19 +224,22 @@ class Word(object):
 
     @property
     def current_guessed_state(self):
-        return [c if c in self.guessed_characters else '_'
-                for c in self._plain_word]
+        return [self._display_char(c) for c in self._plain_word]
+
+    def _display_char(self, char):
+        if self._revealed or char in self.guessed_characters:
+            return char
+        return '_'
 
     @property
     def is_guessed(self):
         return self.guessed_characters == self._characters_in_word
 
     def reveal(self):
-        self._guessed_characters = self._characters_in_word
+        self._revealed = True
 
     def guess_character(self, char):
         if self._is_character_in_word(char):
-            self.guessed_characters.add(char)
             return True
         return False
 
