@@ -62,6 +62,7 @@ class BoardGame(object):
     INVALID_INPUT_MSG = '{character} is an invalid option!'
 
     def __init__(self, view_class):
+        self.SPECIAL_COMMANDS = {'1': self.undo_last_round}
         self.view = view_class(self)
         self.character_pool = CharacterPool(
             view_class=self.view.character_pool_view_class)
@@ -92,16 +93,25 @@ class BoardGame(object):
 
     def play_round(self):
         self.display_board_game()
-        guess = self.get_valid_guess()
-        self.word.guess_character(guess)
-        self.character_pool.use_character(guess)
+        user_input = self.get_valid_input()
+        self.evaluate_input(user_input)
 
-    def get_valid_guess(self):
+    def evaluate_input(self, user_input):
+        if user_input in self.SPECIAL_COMMANDS:
+            self.SPECIAL_COMMANDS[user_input]()
+        else:
+            self.word.guess_character(user_input)
+            self.character_pool.use_character(user_input)
+
+    def get_valid_input(self):
         is_valid_guess = False
         while not is_valid_guess:
             round_guess = self.get_user_input()
             is_valid_guess = self.validate_input(round_guess)
         return round_guess
+
+    def undo_last_round(self):
+        self.character_pool.undo_use_character()
 
     def get_user_input(self):
         raw_input = self.get_raw_input(self.REQUEST_USER_INPUT_MSG)
@@ -136,7 +146,7 @@ class BoardGame(object):
         return valid_guess
 
     def _valid_guess(self, round_guess):
-        return round_guess in self.character_pool.unused_characters
+        return round_guess in self.character_pool.unused_characters or round_guess in self.SPECIAL_COMMANDS
 
     def _character_already_guessed(self, round_guess):
         return round_guess in self.character_pool.used_characters
