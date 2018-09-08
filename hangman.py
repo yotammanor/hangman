@@ -5,6 +5,9 @@
 # On game, see: https://en.wikipedia.org/wiki/Hangman_(game)
 # Created by Yotam Manor.
 # Words extracted from: https://www.hangmanwords.com/words, 2018/06/06
+#
+# NOTE: This game works in Unix terminals only.
+# Windows users can try it using Cygwin or WSL.
 
 import curses
 import random
