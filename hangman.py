@@ -150,6 +150,37 @@ class BoardGame(object):
         return not round_guess
 
 
+class CharacterPool(object):
+    def __init__(self, view_class):
+        self.view = view_class(self)
+        self._unused_characters = {c: None for c in string.ascii_uppercase}
+        self._used_characters = dict()
+
+    def __repr__(self):
+        return self.view.__repr__()
+
+    @property
+    def unused_characters(self):
+        return set(self._unused_characters.keys())
+
+    @property
+    def used_characters(self):
+        return set(self._used_characters.keys())
+
+    def use_character(self, char):
+        self._used_characters.update({char: None})
+        self._unused_characters.pop(char)
+
+    def undo_use_character(self):
+        if self._used_characters:
+            char, _ = self._used_characters.popitem()
+            self._unused_characters.update({char: None})
+
+    @staticmethod
+    def normalize_character(char):
+        return str(char).strip().upper()
+
+
 class Man(object):
     def __init__(self, view_class, tries=DEFAULT_MAX_TRIES,
                  character_pool=None,
@@ -210,24 +241,6 @@ class Word(object):
 
     def _is_character_in_word(self, char):
         return char in self._characters_in_word
-
-
-class CharacterPool(object):
-    def __init__(self, view_class):
-        self.view = view_class(self)
-        self.unused_characters = set(string.ascii_uppercase)
-        self.used_characters = set()
-
-    def __repr__(self):
-        return self.view.__repr__()
-
-    def use_character(self, char):
-        self.used_characters.add(char)
-        self.unused_characters.remove(char)
-
-    @staticmethod
-    def normalize_character(char):
-        return str(char).strip().upper()
 
 
 class WordPool(object):
