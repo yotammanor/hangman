@@ -14,6 +14,8 @@ from abc import (
     abstractmethod,
 )
 
+DEFAULT_MAX_TRIES = 10
+
 
 def main():
     board = initialize_board()
@@ -39,7 +41,7 @@ def initialize_board():
 
 def play_game(board):
     try:
-        board.game()
+        board.play_game()
     except AttributeError as e:
         # This will make sure that curses library cleans up if it failed
         # badly mid-game. This may happen if your console gets shrunk
@@ -67,9 +69,9 @@ class BoardGame(object):
         self.character_pool = CharacterPool(
             view_class=self.view.character_pool_view_class)
 
-    def game(self):
+    def play_game(self):
         while not (self.is_game_lost or self.is_game_won):
-            self.run_round()
+            self.play_round()
         self.end_the_game()
 
     @property
@@ -85,12 +87,12 @@ class BoardGame(object):
             self.word.reveal()
         self.display_end_of_game()
 
-    def run_round(self):
+    def play_round(self):
         self.display_board_game()
         guess = self.get_valid_guess()
         is_guessed_correctly = self.word.guess_character(guess)
         if not is_guessed_correctly:
-            self.man.decrease_try()
+            self.man.bring_closer_to_hanging()
         self.character_pool.use_character(guess)
 
     def get_valid_guess(self):
@@ -132,9 +134,11 @@ class BoardGame(object):
                 character=round_guess))
         return valid_guess
 
-    @staticmethod
-    def _character_already_guessed(round_guess):
-        return round_guess in string.ascii_uppercase
+    def _valid_guess(self, round_guess):
+        return round_guess in self.character_pool.unused_characters
+
+    def _character_already_guessed(self, round_guess):
+        return round_guess in self.character_pool.used_characters
 
     @staticmethod
     def _multi_character_input(round_guess):
@@ -144,12 +148,9 @@ class BoardGame(object):
     def _empty_input(round_guess):
         return not round_guess
 
-    def _valid_guess(self, round_guess):
-        return round_guess in self.character_pool.unused_characters
-
 
 class Man(object):
-    def __init__(self, view_class, tries=10):
+    def __init__(self, view_class, tries=DEFAULT_MAX_TRIES):
         self.view = view_class(self)
         self.tries = tries
 
@@ -160,7 +161,7 @@ class Man(object):
     def is_hanged(self):
         return not self.tries
 
-    def decrease_try(self):
+    def bring_closer_to_hanging(self):
         self.tries -= 1
 
 
