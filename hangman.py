@@ -26,7 +26,7 @@ def initialize_board():
     try:
         board = BoardGame(TerminalPainterBoardGameView)
     except curses.error:
-        print('Failed to load Advanced display, using fallback '
+        print('Failed to load advanced display, using fallback '
               'simplified display')
         # I started with the simple console view, and then added the prettier
         # one above. The following will load as a backup if it the former fails
@@ -63,11 +63,14 @@ class BoardGame(object):
 
     def __init__(self, view_class):
         self.view = view_class(self)
-        self.word = Word(word=WordPool().randomize_word(),
-                         view_class=self.view.word_view_class)
-        self.man = Man(view_class=self.view.man_view_class)
         self.character_pool = CharacterPool(
             view_class=self.view.character_pool_view_class)
+        self.word = Word(word=WordPool().randomize_word(),
+                         view_class=self.view.word_view_class,
+                         character_pool=self.character_pool)
+        self.man = Man(view_class=self.view.man_view_class,
+                       word=self.word,
+                       character_pool=self.character_pool)
 
     def play_game(self):
         while not (self.is_game_lost or self.is_game_won):
@@ -90,9 +93,7 @@ class BoardGame(object):
     def play_round(self):
         self.display_board_game()
         guess = self.get_valid_guess()
-        is_guessed_correctly = self.word.guess_character(guess)
-        if not is_guessed_correctly:
-            self.man.bring_closer_to_hanging()
+        self.word.guess_character(guess)
         self.character_pool.use_character(guess)
 
     def get_valid_guess(self):
@@ -150,46 +151,60 @@ class BoardGame(object):
 
 
 class Man(object):
-    def __init__(self, view_class, tries=DEFAULT_MAX_TRIES):
+    def __init__(self, view_class, tries=DEFAULT_MAX_TRIES,
+                 character_pool=None,
+                 word=None):
+        self.character_pool = character_pool
+        self.word = word
         self.view = view_class(self)
-        self.tries = tries
+        self._initial_tries = tries
 
     def __repr__(self):
         return self.view.__repr__()
+
+    @property
+    def tries(self):
+        return self._initial_tries - self.number_of_wrong_guesses
+
+    @property
+    def number_of_wrong_guesses(self):
+        return (len(self.character_pool.used_characters) -
+                len(self.word.guessed_characters))
 
     @property
     def is_hanged(self):
         return not self.tries
 
-    def bring_closer_to_hanging(self):
-        self.tries -= 1
-
 
 class Word(object):
-    def __init__(self, word, view_class):
+    def __init__(self, word, view_class, character_pool=None):
         self.view = view_class(self)
         self._plain_word = word.upper()
         self._characters_in_word = set(self._plain_word)
-        self._guessed_characters = set()
+        self._character_pool = character_pool
 
     def __repr__(self):
         return self.view.__repr__()
 
     @property
+    def guessed_characters(self):
+        return self._characters_in_word & self._character_pool.used_characters
+
+    @property
     def current_guessed_state(self):
-        return [c if c in self._guessed_characters else '_'
+        return [c if c in self.guessed_characters else '_'
                 for c in self._plain_word]
 
     @property
     def is_guessed(self):
-        return self._guessed_characters == self._characters_in_word
+        return self.guessed_characters == self._characters_in_word
 
     def reveal(self):
         self._guessed_characters = self._characters_in_word
 
     def guess_character(self, char):
         if self._is_character_in_word(char):
-            self._guessed_characters.add(char)
+            self.guessed_characters.add(char)
             return True
         return False
 
@@ -448,6 +463,7 @@ class BaseBoardGameView(object):
 
 class SimpleConsoleBoardGameView(BaseBoardGameView):
     character_pool_view_class = CharacterPoolView
+    man_view_class = NaiveManView
 
     def display_board_game(self):
         print(self.board_game.word)
