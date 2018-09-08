@@ -73,6 +73,9 @@ class BoardGame(object):
                        word=self.word,
                        character_pool=self.character_pool)
 
+    def repr_special_commands(self):
+        return 'Special key(s): ' + ', '.join(f'{k}: {v.__name__}' for k, v in self.SPECIAL_COMMANDS.items())
+
     def play_game(self):
         while not (self.is_game_lost or self.is_game_won):
             self.play_round()
@@ -496,6 +499,7 @@ class SimpleConsoleBoardGameView(BaseBoardGameView):
         print(self.board_game.word)
         print(self.board_game.man)
         print(self.board_game.character_pool)
+        print(self.board_game.repr_special_commands())
 
     def display_end_of_game(self):
         if self.board_game.is_game_won:
@@ -528,7 +532,8 @@ class TerminalPainterBoardGameView(BaseBoardGameView):
     CHARACTER_POOL_LINE = 3
     INPUT_LINE = 5
     MESSAGE_LINE = 6
-    DRAWING_LINE = 7
+    TIP_LINE = 7
+    DRAWING_LINE = 8
 
     def __init__(self, board_game):
         super().__init__(board_game)
@@ -551,6 +556,8 @@ class TerminalPainterBoardGameView(BaseBoardGameView):
         self.stdscr.clear()
         self.stdscr.addstr(self.WORD_LINE, 0,
                            self.board_game.word.__repr__())
+        self.stdscr.addstr(self.TIP_LINE, 0,
+                           self.board_game.repr_special_commands())
         self.stdscr.addstr(self.DRAWING_LINE, 0,
                            self.board_game.man.__repr__())
         self.stdscr.addstr(self.CHARACTER_POOL_LINE, 0,
