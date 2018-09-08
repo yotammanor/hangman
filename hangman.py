@@ -141,11 +141,9 @@ class BoardGame(object):
         elif self._multi_character_input(round_guess):
             self.display_message(self.MULTI_CHAR_INPUT_MSG)
         elif self._character_already_guessed(round_guess):
-            self.display_message(self.ALREADY_GUESSED_MSG.format(
-                character=round_guess))
+            self.display_message(self.ALREADY_GUESSED_MSG.format(character=round_guess))
         else:
-            self.display_message(self.INVALID_INPUT_MSG.format(
-                character=round_guess))
+            self.display_message(self.INVALID_INPUT_MSG.format(character=round_guess))
         return valid_guess
 
     def _valid_guess(self, round_guess):
